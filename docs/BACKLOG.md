@@ -28,3 +28,17 @@
 ## Definição de pronto
 
 Uma história está pronta quando funciona em mobile e desktop, tem texto e estados claros, pode ser navegada por teclado quando houver interação e passou pela validação prevista no plano.
+
+## Critérios de aceite das próximas entregas
+
+### SD-05 — Adicionar ingredientes à lista
+
+- O botão deve adicionar todos os ingredientes da receita com a quantidade proporcional às porções escolhidas.
+- Ingredientes iguais devem ser consolidados em um único item.
+- A pessoa deve receber confirmação clara após a adição.
+
+### SD-07 — Estimar gasto
+
+- Cada item com preço de referência deve contribuir para o total.
+- Itens sem preço devem ser identificados, sem quebrar o cálculo.
+- A tela deve informar que os preços são apenas estimativas e podem variar por região e mercado.
