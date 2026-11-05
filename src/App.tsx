@@ -11,16 +11,18 @@ const recipes: Recipe[] = [
 ]
 const filters = ['Tudo', 'Rápidas', 'Vegetariana', 'Jantar', 'Café da manhã']
 const storageKey = 'sabor-da-casa-shopping-list'
+const favoritesStorageKey = 'sabor-da-casa-favorites'
 const displayAmount = (amount: number) => Number.isInteger(amount) ? String(amount) : amount.toLocaleString('pt-BR', { maximumFractionDigits: 2 })
 
 export default function App() {
   const [activeFilter, setActiveFilter] = useState('Tudo')
-  const [saved, setSaved] = useState<number[]>([])
+  const [saved, setSaved] = useState<number[]>(() => { try { return JSON.parse(localStorage.getItem(favoritesStorageKey) ?? '[]') } catch { return [] } })
   const [selected, setSelected] = useState<Recipe | null>(null)
   const [servings, setServings] = useState(2)
   const [notice, setNotice] = useState('')
   const [list, setList] = useState<ShoppingItem[]>(() => { try { return JSON.parse(localStorage.getItem(storageKey) ?? '[]') } catch { return [] } })
   useEffect(() => localStorage.setItem(storageKey, JSON.stringify(list)), [list])
+  useEffect(() => localStorage.setItem(favoritesStorageKey, JSON.stringify(saved)), [saved])
   useEffect(() => { const close = (e: KeyboardEvent) => e.key === 'Escape' && setSelected(null); window.addEventListener('keydown', close); return () => window.removeEventListener('keydown', close) }, [])
   const visible = recipes.filter((recipe) => activeFilter === 'Tudo' || activeFilter === 'Rápidas' || recipe.category === activeFilter)
   const flash = (message: string) => { setNotice(message); window.setTimeout(() => setNotice(''), 3400) }
