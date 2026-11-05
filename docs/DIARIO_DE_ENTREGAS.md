@@ -29,7 +29,19 @@ Este arquivo registra o que mudou em cada etapa para que o projeto possa ser apr
 - Persistir favoritos.
 - Calcular preços.
 
-## Próxima entrega — Dia 2
+## Dia 2 — Receita e lista de compras
 
-Será criada a tela de detalhes da receita com ingredientes, modo de preparo e controle de porções. A partir dela, será possível adicionar ingredientes à lista de compras, consolidar itens repetidos e marcar itens já comprados.
+**Status: concluído**
 
+### Entregue
+
+- Criado o modal de detalhes com ingredientes, preparo, tempo e categoria.
+- Adicionado controle de porções, que recalcula as quantidades mostradas.
+- Implementada lista de compras persistente no navegador.
+- Itens de mesmo nome e unidade são consolidados ao adicionar mais de uma receita.
+- Incluídos check-ins, remoção de itens, limpeza da lista e estados vazios.
+
+### Validado
+
+- Adicionar receitas atualiza a lista com quantidades proporcionais.
+- A lista permanece após recarregar a página.
