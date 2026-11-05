@@ -1,0 +1,10 @@
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 3px solid #f26b3a;
+  outline-offset: 3px;
+}
+
+input[type='checkbox']:focus-visible {
+  outline-offset: 2px;
+}
