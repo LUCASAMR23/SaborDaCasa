@@ -6,6 +6,7 @@ import './day2.css'
 import './accessibility.css'
 import './day3.css'
 import './filters.css'
+import './auth.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
