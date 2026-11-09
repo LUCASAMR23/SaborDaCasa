@@ -4,6 +4,7 @@ import App from './App'
 import './styles.css'
 import './day2.css'
 import './accessibility.css'
+import './day3.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
