@@ -24,12 +24,14 @@ const listStorageKey = 'sabor-da-casa-shopping-list'
 const favoritesStorageKey = 'sabor-da-casa-favorites'
 const userRecipesStorageKey = 'sabor-da-casa-user-recipes'
 const displayAmount = (amount: number) => Number.isInteger(amount) ? String(amount) : amount.toLocaleString('pt-BR', { maximumFractionDigits: 2 })
+const normalizeSearch = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR')
 
 export default function App() {
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const [account, setAccount] = useState<Account | null>(currentAccount)
   const [userRecipes, setUserRecipes] = useState<Recipe[]>(() => { try { return JSON.parse(localStorage.getItem(userRecipesStorageKey) ?? '[]') } catch { return [] } })
   const [category, setCategory] = useState('Tudo')
+  const [search, setSearch] = useState('')
   const [timeFilter, setTimeFilter] = useState('Qualquer tempo')
   const [difficulty, setDifficulty] = useState('Todas')
   const [saved, setSaved] = useState<number[]>(() => { try { return JSON.parse(localStorage.getItem(favoritesStorageKey) ?? '[]') } catch { return [] } })
@@ -47,7 +49,14 @@ export default function App() {
   useEffect(() => { if (selected) closeButtonRef.current?.focus() }, [selected])
 
   const allRecipes = [...recipes, ...userRecipes]
-  const visible = allRecipes.filter((recipe) => (category === 'Tudo' || recipe.category === category) && (timeFilter === 'Qualquer tempo' || timeFilter === 'Até 20 min' ? recipe.minutes <= 20 : recipe.minutes <= 30) && (difficulty === 'Todas' || recipe.difficulty === difficulty))
+  const normalizedSearch = normalizeSearch(search.trim())
+  const visible = allRecipes.filter((recipe) => {
+    const matchesCategory = category === 'Tudo' || recipe.category === category
+    const matchesTime = timeFilter === 'Qualquer tempo' || (timeFilter === 'Até 20 min' ? recipe.minutes <= 20 : recipe.minutes <= 30)
+    const matchesDifficulty = difficulty === 'Todas' || recipe.difficulty === difficulty
+    const matchesSearch = !normalizedSearch || [recipe.title, recipe.description, recipe.category, ...recipe.ingredients.map((ingredient) => ingredient.name)].some((value) => normalizeSearch(value).includes(normalizedSearch))
+    return matchesCategory && matchesTime && matchesDifficulty && matchesSearch
+  })
   const flash = (message: string) => { setNotice(message); window.setTimeout(() => setNotice(''), 3400) }
   const addPlan = (day: Weekday, meal: MealSlot, recipeId: number) => { setPlan((entries) => [...entries, { id: crypto.randomUUID(), day, meal, recipeId }]); flash('Receita adicionada ao planejamento semanal.') }
   const addUserRecipe = (draft: UserRecipeDraft) => { setUserRecipes((items) => [...items, { id: Date.now(), title: draft.title, description: draft.description, time: 'Tempo a definir', minutes: 0, difficulty: 'Fácil', servings: draft.servings, category: draft.category, image: draft.image || '/images/hero-bowl.png', alt: `Foto da receita ${draft.title}`, ingredients: [], steps: ['Adicione o preparo quando quiser atualizar esta receita.'] }]); flash('Sua receita foi salva com sucesso.') }
@@ -57,6 +66,11 @@ export default function App() {
   return <main><header className="topbar"><a className="brand" href="#inicio"><span>✦</span> Sabor da Casa</a><nav aria-label="Navegação principal"><a className="active" href="#receitas">Receitas</a><a href="#planejar">Planejar</a><a href="#lista">Lista <b className="list-count">{list.length}</b></a></nav><button className="profile" onClick={() => { signOut(); setAccount(null) }} aria-label="Sair da conta" title="Sair da conta">{account.name.slice(0, 2).toUpperCase()}</button></header>
     <section className="hero" id="inicio"><div className="hero-copy"><p className="eyebrow">OLÁ, {account.name.toUpperCase()}</p><h1>Receitas que dão vontade de voltar para a cozinha.</h1><p className="hero-text">Descubra ideias acolhedoras para todos os dias e monte sua próxima lista de compras em poucos toques.</p><div className="hero-actions"><a className="button primary" href="#receitas">Explorar receitas <span>→</span></a><a className="button quiet" href="#planejar">Planejar semana <span>↗</span></a></div></div><div className="hero-art"><img src="/images/hero-bowl.png" alt="Bowl de legumes assados em uma mesa clara" /></div></section>
     <section className="explore" id="receitas"><div className="section-heading"><div><p className="eyebrow">COMECE POR AQUI</p><h2>Feitas para a sua semana</h2></div></div><div className="filters" aria-label="Categorias de receita">{categories.map((filter) => <button key={filter} className={category === filter ? 'selected' : ''} onClick={() => setCategory(filter)}>{filter}</button>)}</div><div className="advanced-filters"><label>Tempo<select value={timeFilter} onChange={(event) => setTimeFilter(event.target.value)}><option>Qualquer tempo</option><option>Até 20 min</option><option>Até 30 min</option></select></label><label>Dificuldade<select value={difficulty} onChange={(event) => setDifficulty(event.target.value)}><option>Todas</option><option>Fácil</option><option>Média</option></select></label></div><div className="recipe-grid">{visible.map((recipe) => <article className={`recipe-card ${recipe.featured ? 'large' : ''}`} key={recipe.id}><div className="recipe-image"><img src={recipe.image} alt={recipe.alt} /><button className={saved.includes(recipe.id) ? 'heart saved' : 'heart'} onClick={() => setSaved((items) => items.includes(recipe.id) ? items.filter((id) => id !== recipe.id) : [...items, recipe.id])} aria-label={`${saved.includes(recipe.id) ? 'Remover' : 'Salvar'} ${recipe.title}`}>{saved.includes(recipe.id) ? '♥' : '♡'}</button></div><div className="recipe-copy"><div className="recipe-meta"><span>{recipe.time}</span><span>•</span><span>{recipe.difficulty}</span></div><h3>{recipe.title}</h3><p>{recipe.description}</p><button className="recipe-link" onClick={() => { setSelected(recipe); setServings(recipe.servings) }}>Ver receita <span>→</span></button></div></article>)}</div>{visible.length === 0 && <p className="no-results">Nenhuma receita encontrada com esses filtros.</p>}</section>
+    <section className="recipe-search" aria-labelledby="search-title">
+      <div><p className="eyebrow">ENCONTRE UMA IDEIA</p><h2 id="search-title">O que você quer cozinhar?</h2><p>Busque pelo nome, ingrediente ou tipo de receita.</p></div>
+      <div className="search-control" role="search"><label className="sr-only" htmlFor="recipe-search">Buscar receitas</label><input id="recipe-search" type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Ex.: banana, frango ou jantar" />{search && <button type="button" onClick={() => setSearch('')} aria-label="Limpar busca">Limpar</button>}</div>
+      <p className="search-summary" aria-live="polite">{visible.length === 1 ? '1 receita encontrada.' : `${visible.length} receitas encontradas.`}</p>
+    </section>
     <RecipeCreator onAdd={addUserRecipe} />
     <WeeklyPlanner recipes={allRecipes} plan={plan} onAdd={addPlan} onRemove={(id) => setPlan((entries) => entries.filter((entry) => entry.id !== id))} />
     <section className="shopping-section" id="lista"><div className="shopping-heading"><div><p className="eyebrow">PARA A PRÓXIMA IDA AO MERCADO</p><h2>Lista de compras</h2><p>Os itens ficam salvos neste navegador.</p></div>{list.length > 0 && <button className="clear-list" onClick={() => setList([])}>Limpar lista</button>}</div>{list.length ? <><ul className="shopping-list">{list.map((item) => <li key={item.id}><label><input type="checkbox" checked={item.checked} onChange={() => setList((items) => items.map((value) => value.id === item.id ? { ...value, checked: !value.checked } : value))} /><span className={item.checked ? 'done' : ''}>{item.name}</span></label><span>{displayAmount(item.amount)} {item.unit}</span><button onClick={() => setList((items) => items.filter((value) => value.id !== item.id))} aria-label={`Remover ${item.name}`}>×</button></li>)}</ul><PriceSummary items={list} /></> : <div className="empty-list"><span>✦</span><h3>Sua lista está vazia</h3><p>Escolha uma receita e adicione os ingredientes que precisa comprar.</p><a className="button primary" href="#receitas">Explorar receitas</a></div>}</section>
